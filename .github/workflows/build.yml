@@ -42,13 +42,13 @@ jobs:
           yes | sdkmanager --licenses
           sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
 
-      # 5. Устанавливаем Gradle через SDKMAN
-      - name: Install Gradle via SDKMAN
+      # 5. Устанавливаем Gradle (прямое скачивание бинарного архива)
+      - name: Install Gradle
         run: |
-          curl -s https://get.sdkman.io | bash
-          source "$HOME/.sdkman/bin/sdkman-init.sh"
-          sdk install gradle 8.5.0
-          echo "$HOME/.sdkman/candidates/gradle/current/bin" >> $GITHUB_PATH
+          curl -sL https://services.gradle.org/distributions/gradle-8.5-bin.zip -o gradle.zip
+          unzip -q gradle.zip -d $HOME
+          echo "$HOME/gradle-8.5/bin" >> $GITHUB_PATH
+          rm -f gradle.zip
 
       # 6. Собираем debug APK
       - name: Build Debug APK
