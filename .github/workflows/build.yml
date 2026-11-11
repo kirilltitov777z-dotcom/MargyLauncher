@@ -14,25 +14,47 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 2. Устанавливаем Android SDK (автоматически принимает лицензии)
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
+      # 2. Устанавливаем JDK 17 (требуется для Android Gradle Plugin)
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
         with:
-          accept-licenses: true
+          distribution: 'temurin'
+          java-version: '17'
 
-      # 3. Устанавливаем Gradle через SDKMAN (нет gradlew в репозитории)
-      - name: Install Gradle
+      # 3. Устанавливаем Android SDK командные инструменты
+      - name: Install Android SDK command-line tools
+        run: |
+          mkdir -p $HOME/android-sdk/cmdline-tools
+          cd $HOME/android-sdk/cmdline-tools
+          curl -sL https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -o sdk-tools.zip
+          unzip -o -q sdk-tools.zip
+          mkdir -p latest
+          mv cmdline-tools/* latest/ 2>/dev/null || true
+          rm -f sdk-tools.zip
+          echo "ANDROID_SDK_ROOT=$HOME/android-sdk" >> $GITHUB_ENV
+          echo "ANDROID_HOME=$HOME/android-sdk" >> $GITHUB_ENV
+          echo "$HOME/android-sdk/cmdline-tools/latest/bin" >> $GITHUB_PATH
+          echo "$HOME/android-sdk/platform-tools" >> $GITHUB_PATH
+
+      # 4. Принимаем лицензии Android SDK и устанавливаем компоненты
+      - name: Accept Android SDK licenses and install components
+        run: |
+          yes | sdkmanager --licenses
+          sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
+
+      # 5. Устанавливаем Gradle через SDKMAN
+      - name: Install Gradle via SDKMAN
         run: |
           curl -s https://get.sdkman.io | bash
           source "$HOME/.sdkman/bin/sdkman-init.sh"
           sdk install gradle 8.5.0
           echo "$HOME/.sdkman/candidates/gradle/current/bin" >> $GITHUB_PATH
 
-      # 4. Собираем debug APK
+      # 6. Собираем debug APK
       - name: Build Debug APK
         run: gradle assembleDebug
 
-      # 5. Загружаем собранный APK как артефакт (доступен 30 дней)
+      # 7. Загружаем собранный APK как артефакт (доступен 30 дней)
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
