@@ -1,0 +1,43 @@
+name: Build APK
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:  # запуск вручную во вкладке Actions
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Клонируем репозиторий
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2. Устанавливаем JDK 17 (требуется для Android Gradle Plugin)
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      # 3. Даём права на выполнение gradlew
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      # 4. Принимаем лицензии Android SDK (иначе сборка упадёт на sdkmanager)
+      - name: Accept Android SDK licenses
+        run: |
+          yes | sdkmanager --licenses || true
+
+      # 5. Собираем debug APK
+      - name: Build Debug APK
+        run: ./gradlew assembleDebug
+
+      # 6. Загружаем собранный APK как артефакт (доступен 30 дней)
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: MargyLauncher-debug-apk
+          path: app/build/outputs/apk/debug/*.apk
+          retention-days: 30
