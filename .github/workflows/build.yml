@@ -19,15 +19,27 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
+      - name: Install Android SDK command-line tools
+        run: |
+          mkdir -p /opt/android-sdk/cmdline-tools
+          cd /opt/android-sdk
+          curl -sL -o cmdline-tools.zip https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip
+          unzip -q cmdline-tools.zip -d cmdline-tools/
+          mv cmdline-tools/cmdline-tools cmdline-tools/latest
+          rm -f cmdline-tools.zip
+          echo "ANDROID_HOME=/opt/android-sdk" >> $GITHUB_ENV
+          echo "/opt/android-sdk/cmdline-tools/latest/bin" >> $GITHUB_PATH
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v3
 
       - name: Accept Android SDK licenses
         run: |
-          yes | sdkmanager --licenses || true
+          yes | sdkmanager --licenses
+
+      - name: Install Android SDK components
+        run: |
+          sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
 
       - name: Build Debug APK
         run: gradle assembleDebug
