@@ -7,7 +7,6 @@ import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.focusObserver
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.GridCells
@@ -23,20 +22,20 @@ import androidx.compose.ui.graphics.BitmapPainter
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.ColorPainter
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.collectAsState
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.margycode.launcher.model.AppItem
 import com.margycode.launcher.ui.theme.AppTheme
 
 /**
  * Главный экран лаунчера в стиле iOS:
- * - сетка приложений 4x6 (LazyVerticalGrid)
- * - иконки скругленные (squircle-стиль), белый текст с тенью
- * - док-бар снизу со стеклянным фоном (glassmorphism) и 4 фиксированных приложения
- * - индикатор страниц (точки) над док-баром
+ * - сетка приложений 4×6 (LazyVerticalGrid)
+ * - squircle-иконки, белый текст с тенью
+ * - док-бар со стеклянным фоном и 4 фиксированных приложения
+ * - точки-индикатор страниц над док-баром
  * - свайп вверх открывает шторку приложений (AppDrawer)
  */
 @Composable
@@ -45,7 +44,8 @@ fun HomeScreen(viewModel: MainViewModel = viewModel()) {
     val page by remember { mutableIntStateOf(0) }
 
     val desktopApps by viewModel.desktopApps.collectAsState()
-    val perPage = 24 // 4 колонки x 6 строк
+
+    val perPage = 24 // 4 колонки × 6 строк
     val pageCount = (desktopApps.size / perPage).coerceAtLeast(1)
 
     val currentPageItems: List<AppItem> = if (desktopApps.isEmpty()) {
@@ -60,7 +60,7 @@ fun HomeScreen(viewModel: MainViewModel = viewModel()) {
     Box(
         modifier = Modifier
             .fillMaxSize()
-            // Свайп вверх по рабочему столу открывает шторку приложений
+            // Свайп вверх по рабочему столу открывает шторку
             .pointerInput(Unit) {
                 detectDragGestures(
                     onDrag = { _, amount ->
@@ -83,7 +83,7 @@ fun HomeScreen(viewModel: MainViewModel = viewModel()) {
 
                 Spacer(Modifier.weight(0.72f))
 
-                // Сетка приложений текущей страницы (стиль iOS, 4x6)
+                // Сетка приложений текущей страницы (стиль iOS, 4×6)
                 LazyVerticalGrid(
                     columns = GridCells.Fixed(4),
                     modifier = Modifier.weight(1f).padding(16.dp),
@@ -128,7 +128,7 @@ fun HomeScreen(viewModel: MainViewModel = viewModel()) {
             }
         }
 
-        // Шторка приложений выезжает снизу (стиль OxygenOS + Material You)
+        // Шторка приложений выезжает снизу (стиль OxygenOS)
         AnimatedVisibility(
             visible = drawerOpen,
             enter = expandVertically(expandFrom = Alignment.Bottom),
@@ -165,26 +165,27 @@ fun AppIcon(app: AppItem, isDock: Boolean = false, onClick: () -> Unit) {
                 .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(16.dp))
         )
 
-        // Подпись белым цветом с легкой тенью (двойной текст со смещением)
+        // Подпись белым цветом с тенью (двойной текст со смещением)
         TextWithShadow(text = app.label, fontSize = textSize, maxLines = 2)
     }
 }
 
 /**
- * Текст с тенью: копия текста в полупрозрачном черном со смещением на 1dp.
+ * Текст с тенью: чёрная копия со смещением + белый текст сверху.
  */
 @Composable
 fun TextWithShadow(text: String, fontSize: TextUnit = 14.sp, maxLines: Int = 1) {
     Column(Modifier.matchParentSize()) {
         Text(
             text = text,
-            color = Color.Black.withAlpha(0.5f),
+            color = Color.Black,
             fontSize = fontSize,
             fontWeight = FontWeight.Medium,
             maxLines = maxLines,
             overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
             textAlign = androidx.compose.ui.text.style.TextAlign.Center,
             modifier = Modifier.offset(x = 1.dp, y = 1.dp)
+                .alpha(0.6f)
         )
         Text(
             text = text,
@@ -203,13 +204,14 @@ fun TextWithShadow(text: String, fontSize: TextUnit = 14.sp, maxLines: Int = 1) 
  */
 @Composable
 fun PageDot(isSelected: Boolean, onClick: () -> Unit) {
-    val color = if (isSelected) Color.White else Color.White.withAlpha(0.4f)
+    val color = if (isSelected) Color.White else Color.White
 
     Box(
         modifier = Modifier
             .size(if (isSelected) 22.dp else 9.dp, 9.dp)
             .clip(RoundedCornerShape(6.dp))
             .background(color)
+            .alpha(if (isSelected) 1f else 0.4f)
             .clickable(onClick = onClick)
     )
 }
@@ -219,15 +221,13 @@ fun PageDot(isSelected: Boolean, onClick: () -> Unit) {
  */
 @Composable
 fun DockBar(apps: List<AppItem>, onAppClick: (AppItem) -> Unit) {
-    val surface = MaterialTheme.colorScheme.surface
-
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .height(84.dp)
-            .background(surface, shape = RoundedCornerShape(32.dp))
-            .alpha(0.6f)
-            .border(1.dp, Color.White.withAlpha(0.14f), RoundedCornerShape(32.dp))
+            .background(MaterialTheme.colorScheme.surface, shape = RoundedCornerShape(32.dp))
+            .alpha(0.65f)
+            .border(1.dp, Color.White, RoundedCornerShape(32.dp))
             .padding(horizontal = 16.dp, vertical = 10.dp)
             .clipToBounds(),
         horizontalArrangement = Arrangement.spacedBy(16.dp),

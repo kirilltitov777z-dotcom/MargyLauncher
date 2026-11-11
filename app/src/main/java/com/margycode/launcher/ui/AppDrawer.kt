@@ -12,6 +12,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.BitmapPainter
+import androidx.compose.ui.graphics.painter.ColorPainter
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.SoftwareKeyboardController
 import androidx.compose.ui.text.input.ImeAction
@@ -24,9 +26,8 @@ import com.margycode.launcher.model.AppItem
 /**
  * Шторка приложений в стиле OxygenOS + Material You:
  * - вертикальный алфавитный список (LazyColumn) с заголовками по буквам
- * - строка поиска в низу (при нажатии открывается клавиатура и фильтрует список)
- * - полупрозрачный задний фон (эффект размытия эмулируется полупрозрачностью;
- *   нативный blur требует android:windowBlurBehind / BlurBehindRenderer на Android 12+)
+ * - строка поиска в низу (при тапе открывается клавиатура и фильтрует список)
+ * - полупрозрачный задний фон (эффект размытия эмулируется прозрачностью)
  */
 @Composable
 fun AppDrawer(
@@ -41,7 +42,7 @@ fun AppDrawer(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background, contentAlpha = 0.88f)
+            .background(MaterialTheme.colorScheme.background, contentAlpha = 0.9f)
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
 
@@ -49,7 +50,7 @@ fun AppDrawer(
                 modifier = Modifier.weight(1f),
                 contentPadding = PaddingValues(horizontal = 16.dp, top = 16.dp, bottom = 92.dp)
             ) {
-                // Группируем приложения по первой букве (алфавитный порядок, как в OxygenOS)
+                // Группируем по первой букве (алфавитный порядок, как в OxygenOS)
                 val grouped = apps.groupBy {
                     it.label.firstOrDefault()?.uppercase() ?: "#"
                 }
@@ -67,7 +68,6 @@ fun AppDrawer(
                                     modifier = Modifier
                                         .padding(16.dp)
                                         .wrapContentWidth(Alignment.Start)
-                                }
                             }
                         }
                         is DrawerEntry.App -> {
@@ -122,13 +122,14 @@ private fun AppDrawerRow(app: AppItem, onAppClick: (AppItem) -> Unit) {
         Icon(
             imageVector = Icons.Default.ChevronRight,
             contentDescription = null,
-            tint = MaterialTheme.colorScheme.onSurface.withAlpha(0.5f)
+            tint = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.alpha(0.5f)
         )
     }
 }
 
 /**
- * Строка поиска шторки. При получении фокуса открывается клавиатура.
+ * Строка поиска шторки. При тапе открывается клавиатура и фильтрует список.
  */
 @Composable
 private fun SearchBar(
@@ -138,22 +139,13 @@ private fun SearchBar(
     modifier: Modifier = Modifier
 ) {
     val focusRequester = remember { FocusRequester() }
-    var focused by remember { mutableStateOf(false) }
-
-    LaunchedEffect(focused) {
-        if (focused) {
-            focusRequester.requestFocus()
-            keyboardController?.show()
-        }
-    }
 
     TextField(
         value = query,
         onValueChange = onQueryChange,
         modifier = modifier
             .background(MaterialTheme.colorScheme.surface, shape = RoundedCornerShape(16.dp))
-            .focusRequester(focusRequester)
-            .focusObserver { focused = it.isFocused },
+            .focusRequester(focusRequester),
         leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
         trailingIcon = {
             if (query.isNotBlank()) {
@@ -161,7 +153,7 @@ private fun SearchBar(
                     Icon(Icons.Default.Close, contentDescription = null)
                 }
             }
-        }, // always returns Unit (IconButton called conditionally inside the slot)
+        },
         placeholder = { Text("Поиск приложений...") },
         keyboardOptions = KeyboardOptions(
             keyboardType = androidx.compose.ui.text.input.KeyboardType.Text,
