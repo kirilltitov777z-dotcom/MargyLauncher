@@ -164,7 +164,7 @@ private fun SearchBar(
                     Icon(Icons.Default.Close, contentDescription = null)
                 }
             }
-        },
+        }, // always returns Unit (IconButton called conditionally inside the slot)
         placeholder = { Text("Поиск приложений...") },
         keyboardOptions = KeyboardOptions(
             keyboardType = androidx.compose.ui.text.input.KeyboardType.Text,
