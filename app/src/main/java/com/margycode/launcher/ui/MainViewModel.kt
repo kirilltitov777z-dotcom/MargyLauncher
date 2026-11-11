@@ -17,7 +17,6 @@ import androidx.lifecycle.combine
 import androidx.lifecycle.stateIn
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.SharingStarted
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import com.margycode.launcher.model.AppItem
 

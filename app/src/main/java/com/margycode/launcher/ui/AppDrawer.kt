@@ -5,7 +5,6 @@ import androidx.compose.foundation.focusObserver
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.stickyHeader
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.material.icons.Icons
@@ -61,15 +60,13 @@ fun AppDrawer(
                 items(flat) { entry ->
                     when (entry) {
                         is DrawerEntry.Header -> {
-                            stickyHeader {
-                                val headerSurface = MaterialTheme.colorScheme.surface
-                                Box(Modifier.fillMaxWidth().background(headerSurface)) {
-                                    Text(
-                                        text = entry.letter,
-                                        style = MaterialTheme.typography.titleMedium,
-                                        modifier = Modifier
-                                            .padding(16.dp)
-                                            .wrapContentWidth(Alignment.Start)
+                            Box(Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surface)) {
+                                Text(
+                                    text = entry.letter,
+                                    style = MaterialTheme.typography.titleMedium,
+                                    modifier = Modifier
+                                        .padding(16.dp)
+                                        .wrapContentWidth(Alignment.Start)
                                 }
                             }
                         }

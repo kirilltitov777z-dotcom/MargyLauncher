@@ -16,8 +16,8 @@ import androidx.compose.ui.unit.dp
  * Управляет прозрачностью цвета Color (Color — value class, у него нет copy()).
  */
 internal fun Color.withAlpha(alpha: Float): Color {
-    val a = ((alpha.coerceIn(0f, 1f) * 255).toInt() shl 24) and 0xFF000000
-    return Color((value and 0x00FFFFFF) or a)
+    val a = alpha.coerceIn(0f, 1f)
+    return Color(red = redComponent, green = greenComponent, blue = blueComponent, alpha = a)
 }
 
 /**

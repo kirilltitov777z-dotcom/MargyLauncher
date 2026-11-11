@@ -44,7 +44,7 @@ fun HomeScreen(viewModel: MainViewModel = viewModel()) {
     val drawerOpen by remember { mutableStateOf(false) }
     val page by remember { mutableIntStateOf(0) }
 
-    val desktopApps = viewModel.desktopApps.value
+    val desktopApps by viewModel.desktopApps.collectAsState()
     val perPage = 24 // 4 колонки x 6 строк
     val pageCount = (desktopApps.size / perPage).coerceAtLeast(1)
 
