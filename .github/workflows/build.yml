@@ -14,27 +14,25 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 2. Устанавливаем JDK 17 (требуется для Android Gradle Plugin)
-      - name: Set up JDK 17
-        uses: actions/setup-java@v4
+      # 2. Устанавливаем Android SDK (автоматически принимает лицензии)
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
         with:
-          distribution: 'temurin'
-          java-version: '17'
+          accept-licenses: true
 
-      # 3. Даём права на выполнение gradlew
-      - name: Grant execute permission for gradlew
-        run: chmod +x gradlew
-
-      # 4. Принимаем лицензии Android SDK (иначе сборка упадёт на sdkmanager)
-      - name: Accept Android SDK licenses
+      # 3. Устанавливаем Gradle через SDKMAN (нет gradlew в репозитории)
+      - name: Install Gradle
         run: |
-          yes | sdkmanager --licenses || true
+          curl -s https://get.sdkman.io | bash
+          source "$HOME/.sdkman/bin/sdkman-init.sh"
+          sdk install gradle 8.5.0
+          echo "$HOME/.sdkman/candidates/gradle/current/bin" >> $GITHUB_PATH
 
-      # 5. Собираем debug APK
+      # 4. Собираем debug APK
       - name: Build Debug APK
-        run: ./gradlew assembleDebug
+        run: gradle assembleDebug
 
-      # 6. Загружаем собранный APK как артефакт (доступен 30 дней)
+      # 5. Загружаем собранный APK как артефакт (доступен 30 дней)
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
