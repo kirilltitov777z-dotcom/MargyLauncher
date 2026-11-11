@@ -9,11 +9,6 @@ import androidx.compose.ui.Modifier
 import com.margycode.launcher.ui.HomeScreen
 import com.margycode.launcher.ui.theme.AppTheme
 
-/**
- * Точка входа лаунчера.
- * Применяет AppTheme, внутри которой на Android 12+ используется dynamicColorScheme()
- * (цвета системы подстраиваются под обои), на старых версиях — тёмная кастомная палитра.
- */
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

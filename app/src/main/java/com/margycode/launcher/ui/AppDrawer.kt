@@ -12,8 +12,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.BitmapPainter
-import androidx.compose.ui.graphics.painter.ColorPainter
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.SoftwareKeyboardController
 import androidx.compose.ui.text.input.ImeAction
@@ -23,12 +21,6 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.collectAsState
 import com.margycode.launcher.model.AppItem
 
-/**
- * Шторка приложений в стиле OxygenOS + Material You:
- * - вертикальный алфавитный список (LazyColumn) с заголовками по буквам
- * - строка поиска в низу (при тапе открывается клавиатура и фильтрует список)
- * - полупрозрачный задний фон (эффект размытия эмулируется прозрачностью)
- */
 @Composable
 fun AppDrawer(
     isOpen: Boolean,
@@ -37,12 +29,13 @@ fun AppDrawer(
     onAppClick: (AppItem) -> Unit = {}
 ) {
     val apps by viewModel.filteredApps.collectAsState()
+    val query by viewModel.query.collectAsState()
     val keyboardController = LocalSoftwareKeyboardController.current
 
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background, contentAlpha = 0.9f)
+            .background(MaterialTheme.colorScheme.background, contentAlpha = 0.88f)
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
 
@@ -50,7 +43,6 @@ fun AppDrawer(
                 modifier = Modifier.weight(1f),
                 contentPadding = PaddingValues(horizontal = 16.dp, top = 16.dp, bottom = 92.dp)
             ) {
-                // Группируем по первой букве (алфавитный порядок, как в OxygenOS)
                 val grouped = apps.groupBy {
                     it.label.firstOrDefault()?.uppercase() ?: "#"
                 }
@@ -68,6 +60,7 @@ fun AppDrawer(
                                     modifier = Modifier
                                         .padding(16.dp)
                                         .wrapContentWidth(Alignment.Start)
+                                }
                             }
                         }
                         is DrawerEntry.App -> {
@@ -77,9 +70,8 @@ fun AppDrawer(
                 }
             }
 
-            // Строка поиска в самом низу шторки
             SearchBar(
-                query = viewModel.query.collectAsState().value,
+                query = query,
                 onQueryChange = { viewModel.setQuery(it) },
                 keyboardController = keyboardController,
                 modifier = Modifier
@@ -96,9 +88,6 @@ private sealed interface DrawerEntry {
     data class App(val app: AppItem) : DrawerEntry
 }
 
-/**
- * Строка приложения в шторке: иконка, название, chevron.
- */
 @Composable
 private fun AppDrawerRow(app: AppItem, onAppClick: (AppItem) -> Unit) {
     Row(
@@ -122,15 +111,11 @@ private fun AppDrawerRow(app: AppItem, onAppClick: (AppItem) -> Unit) {
         Icon(
             imageVector = Icons.Default.ChevronRight,
             contentDescription = null,
-            tint = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.alpha(0.5f)
+            tint = MaterialTheme.colorScheme.onSurface.withAlpha(0.5f)
         )
     }
 }
 
-/**
- * Строка поиска шторки. При тапе открывается клавиатура и фильтрует список.
- */
 @Composable
 private fun SearchBar(
     query: String,
@@ -139,13 +124,22 @@ private fun SearchBar(
     modifier: Modifier = Modifier
 ) {
     val focusRequester = remember { FocusRequester() }
+    var focused by remember { mutableStateOf(false) }
+
+    LaunchedEffect(focused) {
+        if (focused) {
+            focusRequester.requestFocus()
+            keyboardController?.show()
+        }
+    }
 
     TextField(
         value = query,
         onValueChange = onQueryChange,
         modifier = modifier
             .background(MaterialTheme.colorScheme.surface, shape = RoundedCornerShape(16.dp))
-            .focusRequester(focusRequester),
+            .focusRequester(focusRequester)
+            .focusObserver { focused = it.isFocused },
         leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
         trailingIcon = {
             if (query.isNotBlank()) {

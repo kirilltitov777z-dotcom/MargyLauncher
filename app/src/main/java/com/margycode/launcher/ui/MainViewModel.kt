@@ -21,38 +21,32 @@ import kotlinx.coroutines.SharingStarted
 import kotlinx.coroutines.launch
 import com.margycode.launcher.model.AppItem
 
-/**
- * ViewModel лаунчера.
- * Загружает все установленные приложения через PackageManager,
- * делит на рабочий стол (первые 24 под сетку 4×6) и полный список для шторки.
- */
 class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     private val pm: PackageManager = application.packageManager
 
-    /// Приложения для рабочего стола (избранное, первые 24)
     private val _desktopApps = MutableStateFlow(emptyList<AppItem>())
-    val desktopApps: androidx.lifecycle.StateFlow<List<AppItem>> = _desktopApps.asStateFlow()
+    val desktopApps = _desktopApps.asStateFlow()
 
-    /// Все приложения для шторки (App Drawer)
     private val _drawerApps = MutableStateFlow(emptyList<AppItem>())
-    val drawerApps: androidx.lifecycle.StateFlow<List<AppItem>> = _drawerApps.asStateFlow()
+    val drawerApps = _drawerApps.asStateFlow()
 
-    /// Текущий текст поиска в шторке
     private val _query = MutableStateFlow("")
-    val query: androidx.lifecycle.StateFlow<String> = _query.asStateFlow()
+    val query = _query.asStateFlow()
 
-    /// Список шторки с учётом фильтра поиска
-    val filteredApps = androidx.lifecycle.combine(drawerApps, query) { apps, text ->
+    val filteredApps = drawerApps.combine(query) { apps, text ->
         val q = text.trim().lowercase()
-        if (q.isEmpty()) apps else apps.filter { it.label.lowercase().contains(q) }
+        if (q.isEmpty()) apps
+        else apps.filter { it.label.lowercase().contains(q) }
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = emptyList()
     )
 
-    init { loadApps() }
+    init {
+        loadApps()
+    }
 
     fun setQuery(text: String) {
         _query.value = text
@@ -74,11 +68,17 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                         setPackage(info.packageName)
                     }
 
-                // Оставляем только те приложения, которые реально можно запустить
                 if (pm.resolveActivity(intent, PackageManager.MATCH_DEFAULT_ONLY) == null) continue
 
                 val icon = toBitmap(info.loadIcon(pm))
-                apps.add(AppItem(label, info.packageName, intent, icon))
+                apps.add(
+                    AppItem(
+                        label = label,
+                        packageName = info.packageName,
+                        intent = intent,
+                        icon = icon
+                    )
+                )
             }
 
             apps.sortBy { it.label.lowercase() }
@@ -88,9 +88,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    /** Переводит Drawable иконок в ImageBitmap для Compose. */
     private fun toBitmap(drawable: Drawable?): ImageBitmap? {
         drawable ?: return null
+
         val bitmap = if (drawable is BitmapDrawable) {
             drawable.bitmap
         } else {
@@ -103,6 +103,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 }
             }
         }
+
         return bitmap.toImageBitmap()
     }
 }

@@ -12,11 +12,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 
-/**
- * Тема приложения.
- * Android 12+: dynamicColorScheme — цвета подстраиваются под обои (Material You).
- * Старые версии: тёмная кастомная палитра (фолбэк).
- */
 @Composable
 fun AppTheme(content: @Composable () -> Unit) {
     val context = LocalContext.current
@@ -37,9 +32,11 @@ fun AppTheme(content: @Composable () -> Unit) {
     }
 }
 
-/**
- * Dynamic Color (Material You): берём средний пиксель обоев и строим палитру.
- */
+internal fun Color.withAlpha(alpha: Float): Color {
+    val a = alpha.coerceIn(0f, 1f)
+    return Color(red = redComponent, green = greenComponent, blue = blueComponent, alpha = a)
+}
+
 private fun dynamicColorScheme(context: Context): ColorScheme {
     return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
         try {
@@ -52,7 +49,7 @@ private fun dynamicColorScheme(context: Context): ColorScheme {
             val g = android.graphics.Color.green(pixel) / 255f
             val b = android.graphics.Color.blue(pixel) / 255f
             val luminance = 0.2126f * r + 0.7152f * g + 0.0722f * b
-            val base = Color(red = r, green = g, blue = b, alpha = 1f)
+            val base = Color(pixel)
 
             return if (luminance < 0.5f) {
                 darkColorScheme(primary = base)

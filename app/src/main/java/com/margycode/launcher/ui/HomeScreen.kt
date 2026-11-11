@@ -30,23 +30,15 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.margycode.launcher.model.AppItem
 import com.margycode.launcher.ui.theme.AppTheme
 
-/**
- * Главный экран лаунчера в стиле iOS:
- * - сетка приложений 4×6 (LazyVerticalGrid)
- * - squircle-иконки, белый текст с тенью
- * - док-бар со стеклянным фоном и 4 фиксированных приложения
- * - точки-индикатор страниц над док-баром
- * - свайп вверх открывает шторку приложений (AppDrawer)
- */
 @Composable
 fun HomeScreen(viewModel: MainViewModel = viewModel()) {
     val drawerOpen by remember { mutableStateOf(false) }
     val page by remember { mutableIntStateOf(0) }
 
     val desktopApps by viewModel.desktopApps.collectAsState()
+    val perPage = 24 // 4 колонки x 6 строк
 
-    val perPage = 24 // 4 колонки × 6 строк
-    val pageCount = (desktopApps.size / perPage).coerceAtLeast(1)
+    val pageCount = if (desktopApps.isEmpty()) 1 else (desktopApps.size / perPage).coerceAtLeast(1)
 
     val currentPageItems: List<AppItem> = if (desktopApps.isEmpty()) {
         emptyList()
@@ -60,7 +52,6 @@ fun HomeScreen(viewModel: MainViewModel = viewModel()) {
     Box(
         modifier = Modifier
             .fillMaxSize()
-            // Свайп вверх по рабочему столу открывает шторку
             .pointerInput(Unit) {
                 detectDragGestures(
                     onDrag = { _, amount ->
@@ -83,7 +74,6 @@ fun HomeScreen(viewModel: MainViewModel = viewModel()) {
 
                 Spacer(Modifier.weight(0.72f))
 
-                // Сетка приложений текущей страницы (стиль iOS, 4×6)
                 LazyVerticalGrid(
                     columns = GridCells.Fixed(4),
                     modifier = Modifier.weight(1f).padding(16.dp),
@@ -103,7 +93,6 @@ fun HomeScreen(viewModel: MainViewModel = viewModel()) {
                     }
                 }
 
-                // Индикатор страниц (точки) над док-баром
                 Row(
                     modifier = Modifier.padding(horizontal = 32.dp, vertical = 10.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -114,7 +103,6 @@ fun HomeScreen(viewModel: MainViewModel = viewModel()) {
                     }
                 }
 
-                // Док-бар: стеклянный фон, скругленные углы, 4 фиксированных приложения
                 DockBar(
                     apps = desktopApps.take(4),
                     onAppClick = { app ->
@@ -128,7 +116,6 @@ fun HomeScreen(viewModel: MainViewModel = viewModel()) {
             }
         }
 
-        // Шторка приложений выезжает снизу (стиль OxygenOS)
         AnimatedVisibility(
             visible = drawerOpen,
             enter = expandVertically(expandFrom = Alignment.Bottom),
@@ -142,9 +129,6 @@ fun HomeScreen(viewModel: MainViewModel = viewModel()) {
     }
 }
 
-/**
- * Один элемент приложения: иконка + подпись под ней.
- */
 @Composable
 fun AppIcon(app: AppItem, isDock: Boolean = false, onClick: () -> Unit) {
     val iconSize = if (isDock) 48.dp else 60.dp
@@ -155,7 +139,6 @@ fun AppIcon(app: AppItem, isDock: Boolean = false, onClick: () -> Unit) {
         modifier = Modifier.size(cellSize).clickable(onClick = onClick),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Иконка со скругленными углами (squircle-стиль)
         Image(
             painter = if (app.icon != null) BitmapPainter(app.icon!!) else ColorPainter(Color.LightGray),
             contentDescription = null,
@@ -165,27 +148,22 @@ fun AppIcon(app: AppItem, isDock: Boolean = false, onClick: () -> Unit) {
                 .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(16.dp))
         )
 
-        // Подпись белым цветом с тенью (двойной текст со смещением)
         TextWithShadow(text = app.label, fontSize = textSize, maxLines = 2)
     }
 }
 
-/**
- * Текст с тенью: чёрная копия со смещением + белый текст сверху.
- */
 @Composable
 fun TextWithShadow(text: String, fontSize: TextUnit = 14.sp, maxLines: Int = 1) {
     Column(Modifier.matchParentSize()) {
         Text(
             text = text,
-            color = Color.Black,
+            color = Color.Black.withAlpha(0.5f),
             fontSize = fontSize,
             fontWeight = FontWeight.Medium,
             maxLines = maxLines,
             overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
             textAlign = androidx.compose.ui.text.style.TextAlign.Center,
             modifier = Modifier.offset(x = 1.dp, y = 1.dp)
-                .alpha(0.6f)
         )
         Text(
             text = text,
@@ -199,35 +177,30 @@ fun TextWithShadow(text: String, fontSize: TextUnit = 14.sp, maxLines: Int = 1) 
     }
 }
 
-/**
- * Точка индикатора страницы.
- */
 @Composable
 fun PageDot(isSelected: Boolean, onClick: () -> Unit) {
-    val color = if (isSelected) Color.White else Color.White
+    val color = if (isSelected) Color.White else Color.White.withAlpha(0.4f)
 
     Box(
         modifier = Modifier
             .size(if (isSelected) 22.dp else 9.dp, 9.dp)
             .clip(RoundedCornerShape(6.dp))
             .background(color)
-            .alpha(if (isSelected) 1f else 0.4f)
             .clickable(onClick = onClick)
     )
 }
 
-/**
- * Док-бар снизу экрана: стеклянный (полупрозрачный) фон со скругленными углами.
- */
 @Composable
 fun DockBar(apps: List<AppItem>, onAppClick: (AppItem) -> Unit) {
+    val surface = MaterialTheme.colorScheme.surface
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .height(84.dp)
-            .background(MaterialTheme.colorScheme.surface, shape = RoundedCornerShape(32.dp))
-            .alpha(0.65f)
-            .border(1.dp, Color.White, RoundedCornerShape(32.dp))
+            .background(surface, shape = RoundedCornerShape(32.dp))
+            .alpha(0.6f)
+            .border(1.dp, Color.White.withAlpha(0.14f), RoundedCornerShape(32.dp))
             .padding(horizontal = 16.dp, vertical = 10.dp)
             .clipToBounds(),
         horizontalArrangement = Arrangement.spacedBy(16.dp),
@@ -242,9 +215,6 @@ fun DockBar(apps: List<AppItem>, onAppClick: (AppItem) -> Unit) {
     }
 }
 
-/**
- * Squircle-форма (скругленные углы в стиле iOS).
- */
 class SquircleShape : androidx.compose.foundation.shape.Shape {
     override fun createOutline(
         size: androidx.compose.ui.geometry.Size,
